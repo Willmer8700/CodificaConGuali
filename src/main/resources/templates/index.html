@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Codifica con Guali</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <h1>Codifica con Guali</h1>
+    
+    <!-- Modal de Victoria -->
+    <div id="successModal" class="game-modal success-modal">
+        <div class="modal-content">
+            <div class="modal-icon">🎉</div>
+            <div class="modal-title">¡FELICITACIONES!</div>
+            <div class="modal-message">¡Has completado la pista exitosamente!</div>
+            <button class="modal-button" onclick="document.getElementById('successModal').style.display='none'">
+                ¡Genial!
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Derrota -->
+    <div id="failureModal" class="game-modal failure-modal">
+        <div class="modal-content">
+            <div class="modal-icon">😢</div>
+            <div class="modal-title">¡OH NO!</div>
+            <div class="modal-message">El robot salió de la pista. ¡Inténtalo de nuevo!</div>
+            <button class="modal-button" onclick="document.getElementById('failureModal').style.display='none'">
+                Reintentar
+            </button>
+        </div>
+    </div>
+
+    <div id="game-panel">
+        <h3>Pista: <span id="trackNameSpan" th:text="${track.name}"></span></h3>
+        
+        <div id="grid" th:attr="data-track=${trackPathJson}" class="grid"></div>
+        <img id="robot" th:src="@{/images/robot.png}" style="display: none;">
+
+        <div class="controls">
+            <button id="forward">⬆️</button>
+            <button id="left">⬅️</button>
+            <button id="right">➡️</button>
+            <button id="loop-start">🔄</button>
+        </div>
+
+        <div class="controls">
+            <button id="execute">▶️ Ejecutar</button>
+            <button id="reset">🔄 Reiniciar</button>
+            <button id="clear">🗑️ Limpiar Comandos</button>
+            <button id="config">⚙️ Configurar</button>
+        </div>
+
+        <div class="moves">
+            <h4>Movimientos</h4>
+            <ul id="moves"></ul>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <div id="config-panel" style="display: none;">
+        <h3>
+            <a href="/">← Volver al Juego</a> | 
+            Configuración de Pista |
+            <a href="/admin/users">
+                Gestión de Usuarios
+            </a>
+        </h3>
+        <h4>Instrucciones: Haz clic en las celdas para diseñar la pista (verde)</h4>
+        <div id="config-grid"></div>
+        <div class="controls">
+            <button id="saveTrack">💾 Guardar Pista</button>
+            <button id="clearGrid">🗑️ Limpiar Grid</button>
+        </div>
+        <div class="controls" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
+            <h4>Importar / Exportar Pistas</h4>
+            
+            <div>
+                <input type="file" id="importFile" style="display: none;" accept=".json">
+                <button id="importTrackBtn">📂 Cargar Pista desde Archivo</button>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <select id="trackSelector" style="padding: 8px;">
+                    <option value="">-- Selecciona una pista para exportar --</option>
+                    <th:block th:each="track : ${allTracks}">
+                        <option th:value="${track.id}" th:text="${track.name}"></option>
+                    </th:block>
+                </select>
+                <button id="exportTrackBtn">📤 Exportar Pista Seleccionada</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/app.js}"></script>
+    
+    <!-- Script para mostrar modales -->
+    <script>
+        // Función para mostrar modal de victoria
+        window.showSuccessModal = function() {
+            document.getElementById('successModal').style.display = 'block';
+        }
+        
+        // Función para mostrar modal de derrota
+        window.showFailureModal = function() {
+            document.getElementById('failureModal').style.display = 'block';
+        }
+        
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const successModal = document.getElementById('successModal');
+            const failureModal = document.getElementById('failureModal');
+            if (event.target == successModal) {
+                successModal.style.display = 'none';
+            }
+            if (event.target == failureModal) {
+                failureModal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bitácora del Sistema - Codifica con Guali</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+</head>
+<body>
+    <div class="admin-container">
+        <h1>Bitácora de Acciones del Administrador</h1>
+        
+        <div class="admin-nav">
+            <a th:href="@{/admin/stats}" class="btn-secondary">Estadísticas</a>
+            <a th:href="@{/admin/users}" class="btn-secondary">← Gestión de Usuarios</a>
+            <a th:href="@{/configurar}" class="btn-secondary">Config. de Pistas</a>
+            <a th:href="@{/}" class="btn-secondary">Ir al Juego</a>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Fecha y Hora</th>
+                    <th style="width: 15%;">Usuario</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr th:each="log : ${logs}">
+                    <td th:text="${#temporals.format(log.timestamp, 'dd/MM/yyyy HH:mm:ss')}">01/01/2025 10:30:00</td>
+                    <td th:text="${log.username}">admin</td>
+                    <td th:text="${log.action}">Creó una pista</td>
+                </tr>
+                
+                <tr th:if="${logs == null || logs.isEmpty()}">
+                    <td colspan="3" style="text-align: center;">No hay acciones registradas todavía.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+

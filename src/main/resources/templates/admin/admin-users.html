@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Usuarios - Codifica con Guali</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="admin-container">
+        <h1>👥 Gestión de Administradores</h1>
+        <p class="subtitle">Administración de cuentas y permisos</p>
+        
+        <div class="admin-nav">
+            <a th:href="@{/configurar}" class="btn-secondary">← Volver al Config.</a>
+            <a th:href="@{/admin/log}">📋 Ver Bitácora</a>
+            <a th:href="@{/admin/stats}">📊 Estadísticas</a>
+            <a th:href="@{/}" class="btn-secondary">🎮 Ir al Juego</a>
+            <a th:href="@{/admin/users/new}" class="btn-success">➕ Añadir Nuevo Admin</a>
+        </div>
+
+        <div th:if="${message}" class="message message-success" th:text="${message}"></div>
+        <div th:if="${error}" class="message message-error" th:text="${error}"></div>
+
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>🆔 ID</th>
+                        <th>👤 Usuario (Username)</th>
+                        <th>🔑 Rol</th>
+                        <th>⚙️ Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="user : ${users}">
+                        <td th:text="${user.id}">1</td>
+                        <td>
+                            <span class="username-cell" th:text="${user.username}">admin</span>
+                        </td>
+                        <td th:text="${user.role}">ROLE_ADMIN</td>
+                        <td class="actions">
+                            <a th:href="@{/admin/users/edit/{id}(id=${user.id})}">✏️ Editar</a>
+                            <a th:href="@{/admin/users/delete/{id}(id=${user.id})}"
+                               onclick="return confirm('¿Estás seguro de que quieres eliminar a este usuario?')">🗑️ Eliminar</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${users == null || users.isEmpty()}">
+                        <td colspan="4" class="empty-state">
+                            <div class="icon">👤</div>
+                            <p>No hay usuarios registrados</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

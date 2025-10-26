@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Formulario de Usuario</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="login-container">
+        <h1 th:text="${pageTitle}">📝 Formulario de Usuario</h1>
+        <p class="subtitle">Complete los datos del administrador</p>
+        
+        <form th:action="@{/admin/users/save}" th:object="${user}" method="post">
+            <input type="hidden" th:field="*{id}" />
+            
+            <div class="form-group">
+                <label for="username">Nombre de Usuario</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        th:field="*{username}" 
+                        placeholder="Ingrese el nombre de usuario"
+                        required 
+                    />
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        th:field="*{password}" 
+                        th:placeholder="${user.id == null ? 'Ingrese la contraseña' : 'Dejar en blanco para no cambiar'}"
+                        th:required="${user.id == null}" 
+                    />
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn">💾 Guardar Usuario</button>
+                <a th:href="@{/admin/users}" class="btn btn-secondary">❌ Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

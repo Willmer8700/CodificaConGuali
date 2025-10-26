@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Login - Codifica con Guali</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body class="login-page">
+    <!-- Decoración de fondo -->
+    <div class="bg-decoration">
+        <div class="bg-circle circle-1"></div>
+        <div class="bg-circle circle-2"></div>
+        <div class="bg-circle circle-3"></div>
+    </div>
+
+    <div class="login-container">
+        <h2>Login de Administrador</h2>
+        <p class="subtitle">Ingresa tus credenciales para continuar</p>
+        
+        <!-- Mensaje de error (si existe) -->
+        <div th:if="${param.error}" class="error-message">
+            ❌ Usuario o contraseña incorrectos
+        </div>
+        
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        placeholder="Ingresa tu usuario"
+                        required 
+                        autocomplete="username"
+                    >
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Ingresa tu contraseña"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+            </div>
+            
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+        
+        <p><a th:href="@{/}">Volver al Juego</a></p>
+    </div>
+
+    <script>
+        // Enfoque automático en el campo de usuario
+        window.addEventListener('load', function() {
+            document.getElementById('username').focus();
+        });
+        
+        // Añadir efecto de shake si hay error
+        const errorMsg = document.querySelector('.error-message');
+        if (errorMsg) {
+            setTimeout(() => {
+                errorMsg.style.animation = 'shake 0.5s ease';
+            }, 100);
+        }
+    </script>
+</body>
+</html>

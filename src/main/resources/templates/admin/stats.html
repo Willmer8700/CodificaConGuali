@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Estadísticas de Uso - Codifica con Guali</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+    <div class="admin-container">
+        <h1>📊 Estadísticas de Uso del Juego</h1>
+        <p class="subtitle">Análisis del rendimiento y uso del sistema</p>
+
+        <div class="admin-nav">
+            <a th:href="@{/admin/users}">👥 Gestión de Usuarios</a>
+            <a th:href="@{/admin/log}">📋 Bitácora</a>
+            <a th:href="@{/configurar}">⚙️ Configurar Pistas</a>
+            <a th:href="@{/}" class="btn-secondary">🎮 Ir al Juego</a>
+        </div>
+
+        <form th:action="@{/admin/stats}" method="get" class="filter-form">
+            <label for="startDate">📅 Desde:</label>
+            <input type="date" id="startDate" name="startDate" th:value="${startDate}">
+
+            <label for="endDate">📅 Hasta:</label>
+            <input type="date" id="endDate" name="endDate" th:value="${endDate}">
+
+            <button type="submit">🔍 Filtrar</button>
+            <a th:href="@{/admin/stats}">🗑️ Limpiar Filtro</a>
+        </form>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">👁️</div>
+                <h3>Total de Visitas
+                    <span class="filter-indicator" th:if="${!#strings.isEmpty(startDate)}">(Filtrado)</span>
+                </h3>
+                <div class="stat-number" th:text="${totalVisits}">0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="icon">🎮</div>
+                <h3>Total de Partidas
+                    <span class="filter-indicator" th:if="${!#strings.isEmpty(startDate)}">(Filtrado)</span>
+                </h3>
+                <div class="stat-number" th:text="${totalPlays}">0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="icon">✅</div>
+                <h3>Misiones Exitosas
+                    <span class="filter-indicator" th:if="${!#strings.isEmpty(startDate)}">(Filtrado)</span>
+                </h3>
+                <div class="stat-number stat-rate" th:text="${totalSuccess}">0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="icon">❌</div>
+                <h3>Misiones Fallidas
+                    <span class="filter-indicator" th:if="${!#strings.isEmpty(startDate)}">(Filtrado)</span>
+                </h3>
+                <div class="stat-number stat-fail" th:text="${totalFail}">0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="icon">📈</div>
+                <h3>Tasa de Éxito
+                    <span class="filter-indicator" th:if="${!#strings.isEmpty(startDate)}">(Filtrado)</span>
+                </h3>
+                <div class="stat-number stat-rate" th:text="${successRate} + '%'">0.00%</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
