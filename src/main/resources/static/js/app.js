@@ -51,6 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const cellSize = 60;
     const cellBorder = 1;
     const innerOffset = (cellSize - 2 * cellBorder - 50) / 2;
+    
+    // ✅ NUEVO: Variable para controlar el estado del loop
+    let isInsideLoop = false;
 
     if (window.location.pathname === '/configurar') {
         gamePanel.style.display = 'none';
@@ -96,7 +99,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('forward')?.addEventListener('click', () => addMove('forward'));
     document.getElementById('left')?.addEventListener('click', () => addMove('left'));
     document.getElementById('right')?.addEventListener('click', () => addMove('right'));
-    document.getElementById('loop-start')?.addEventListener('click', () => addMove('loop-start'));
+    
+    // ✅ CORREGIDO: Loop con alternancia entre loop-start y loop-end
+    document.getElementById('loop-start')?.addEventListener('click', () => {
+        if (!isInsideLoop) {
+            addMove('loop-start');
+            isInsideLoop = true;
+        } else {
+            addMove('loop-end');
+            isInsideLoop = false;
+        }
+    });
+    
     document.getElementById('reset')?.addEventListener('click', reset);
     document.getElementById('clear')?.addEventListener('click', clearMoves);
     document.getElementById('execute')?.addEventListener('click', executeMoves);
@@ -145,30 +159,91 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- FUNCIONES DEL JUEGO ---
-    function addMove(type) { moves.push(type); const li=document.createElement('li'); li.textContent=type; movesList.appendChild(li); }
-    function reset() { moves=[]; movesList.innerHTML=''; position={row:4,col:0}; direction=0; const startCell=grid.children[20]; startCell.appendChild(robot); robot.style.transform='rotate(0deg)'; message.textContent=''; }
-    function clearMoves() { moves=[]; movesList.innerHTML=''; }
+    function addMove(type) { 
+        moves.push(type); 
+        const li = document.createElement('li'); 
+        li.textContent = type; 
+        movesList.appendChild(li); 
+    }
+    
+    // ✅ CORREGIDO: Reset también resetea el estado del loop
+    function reset() { 
+        moves = []; 
+        movesList.innerHTML = ''; 
+        position = { row: 4, col: 0 }; 
+        direction = 0; 
+        isInsideLoop = false; // Resetear estado de loop
+        const startCell = grid.children[20]; 
+        startCell.appendChild(robot); 
+        robot.style.transform = 'rotate(0deg)'; 
+        message.textContent = ''; 
+    }
+    
+    function clearMoves() { 
+        moves = []; 
+        movesList.innerHTML = ''; 
+        isInsideLoop = false; // Resetear estado de loop al limpiar
+    }
 
-
+    // ✅ CORREGIDO: Ejecutar movimientos con procesamiento de loops
     function executeMoves() { 
-        let i = 0; 
+        const expandedMoves = expandLoops(moves);
+        let i = 0;
+        let hasFailed = false;
+        
         const interval = setInterval(() => { 
-            if (i >= moves.length) { 
+            if (i >= expandedMoves.length || hasFailed) { 
                 clearInterval(interval); 
                 
-                if (isAtEnd(position, trackPath)) { 
+                if (!hasFailed && isAtEnd(position, trackPath)) { 
+                    // ✅ CASO: VICTORIA
                     message.textContent = '¡Misión satisfactoria!';
+                    if (typeof window.showSuccessModal === 'function') {
+                        window.showSuccessModal();
+                    }
                     logGameResult("SUCCESS");
-                } else { 
-                    message.textContent = 'Inténtalo de nuevo'; 
+                    
+                    // ✅ AGREGAR: Reiniciar después de ganar
+                    setTimeout(() => {
+                        resetToStart();
+                    }, 1000);
+                    
+                } else if (!hasFailed) { 
+                    // ✅ CASO: Se quedó a medio camino
+                    message.textContent = 'Inténtalo de nuevo';
+                    if (typeof window.showFailureModal === 'function') {
+                        window.showFailureModal();
+                    }
                     logGameResult("FAIL");
-                } 
+                    
+                    // ✅ Reiniciar después de perder
+                    setTimeout(() => {
+                        resetToStart();
+                    }, 1000);
+                }
                 return; 
             } 
             
-            let move = moves[i]; 
+            let move = expandedMoves[i]; 
+            
             if (move === 'forward') {
-                moveForward(); 
+                const success = moveForward();
+                if (!success) {
+                    // ✅ CASO: Se salió de la pista
+                    hasFailed = true;
+                    message.textContent = '¡El robot salió de la pista!';
+                    if (typeof window.showFailureModal === 'function') {
+                        window.showFailureModal();
+                    }
+                    logGameResult("FAIL");
+                    clearInterval(interval);
+                    
+                    // ✅ Reiniciar después de salirse
+                    setTimeout(() => {
+                        resetToStart();
+                    }, 1000);
+                    return;
+                }
             } else if (move === 'left') { 
                 direction = (direction + 3) % 4; 
                 robot.style.transform = `rotate(${direction * -90}deg)`;
@@ -176,30 +251,108 @@ document.addEventListener('DOMContentLoaded', () => {
                 direction = (direction + 1) % 4; 
                 robot.style.transform = `rotate(${direction * 90}deg)`;
             } 
+            
             i++; 
         }, 500); 
     }
 
+    // ✅ NUEVO: Función para expandir loops
+    function expandLoops(movesList) {
+        const expanded = [];
+        let i = 0;
+        
+        while (i < movesList.length) {
+            if (movesList[i] === 'loop-start') {
+                // Encontrar el loop-end correspondiente
+                const loopStart = i;
+                let loopEnd = -1;
+                let depth = 1;
+                
+                for (let j = i + 1; j < movesList.length; j++) {
+                    if (movesList[j] === 'loop-start') depth++;
+                    if (movesList[j] === 'loop-end') {
+                        depth--;
+                        if (depth === 0) {
+                            loopEnd = j;
+                            break;
+                        }
+                    }
+                }
+                
+                if (loopEnd !== -1) {
+                    // Extraer comandos dentro del loop
+                    const loopCommands = movesList.slice(loopStart + 1, loopEnd);
+                    // Repetir 2 veces (puedes cambiar esto)
+                    for (let repeat = 0; repeat < 2; repeat++) {
+                        expanded.push(...loopCommands);
+                    }
+                    i = loopEnd + 1;
+                } else {
+                    // Si no hay loop-end, ignorar el loop-start
+                    i++;
+                }
+            } else if (movesList[i] !== 'loop-end') {
+                // Agregar movimientos normales (ignorar loop-end sueltos)
+                expanded.push(movesList[i]);
+                i++;
+            } else {
+                i++;
+            }
+        }
+        
+        return expanded;
+    }
+
+    // ✅ CORREGIDO: moveForward ahora retorna true/false y permite salirse
     function moveForward() { 
         let newRow = position.row; 
         let newCol = position.col; 
-        if (direction === 0 && position.row > 0) newRow--;
-        else if (direction === 1 && position.col < 4) newCol++;
-        else if (direction === 2 && position.row < 4) newRow++;
-        else if (direction === 3 && position.col > 0) newCol--;
         
-        if ((newRow !== position.row || newCol !== position.col) && isOnPath({ row: newRow, col: newCol })) { 
-            position.row = newRow; 
-            position.col = newCol; 
-            const newCell = grid.children[position.row * 5 + position.col]; 
-            newCell.appendChild(robot); 
-        } 
+        // Calcular nueva posición según dirección
+        if (direction === 0) newRow--; // Arriba
+        else if (direction === 1) newCol++; // Derecha
+        else if (direction === 2) newRow++; // Abajo
+        else if (direction === 3) newCol--; // Izquierda
+        
+        // ✅ Verificar si está dentro del grid
+        const isInsideGrid = newRow >= 0 && newRow < 5 && newCol >= 0 && newCol < 5;
+        
+        if (!isInsideGrid) {
+            // ✅ SALIÓ DEL GRID - No mover y retornar false
+            return false;
+        }
+        
+        // ✅ Mover el robot a la nueva posición
+        position.row = newRow; 
+        position.col = newCol; 
+        const newCell = grid.children[position.row * 5 + position.col]; 
+        newCell.appendChild(robot);
+        
+        // ✅ Verificar si está en el path
+        const onPath = isOnPath(position);
+        
+        if (!onPath) {
+            // ✅ SALIÓ DE LA PISTA - Retornar false
+            return false;
+        }
+        
+        // ✅ Movimiento exitoso
+        return true;
+    }
+
+    // ✅ NUEVO: Función para reiniciar a la posición inicial
+    function resetToStart() {
+        position = { row: 4, col: 0 };
+        direction = 0;
+        const startCell = grid.children[20];
+        startCell.appendChild(robot);
+        robot.style.transform = 'rotate(0deg)';
     }
 
     function setupConfigGrid() { 
-        configGrid.innerHTML=''; 
-        for(let row=0; row<5; row++) { 
-            for(let col=0; col<5; col++) { 
+        configGrid.innerHTML = ''; 
+        for (let row = 0; row < 5; row++) { 
+            for (let col = 0; col < 5; col++) { 
                 const cell = document.createElement('div'); 
                 cell.classList.add('cell'); 
                 cell.dataset.row = row; 
@@ -221,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!current) return path; 
         sortedPath.push([...current]); 
         visited.add(`${current[0]},${current[1]}`); 
+        
         while (sortedPath.length < path.length) { 
             const lastPoint = sortedPath[sortedPath.length - 1]; 
             const nextPoint = path.find(p => { 
@@ -230,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const colDiff = Math.abs(p[1] - lastPoint[1]); 
                 return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1); 
             }); 
+            
             if (nextPoint) { 
                 sortedPath.push([...nextPoint]); 
                 visited.add(`${nextPoint[0]},${nextPoint[1]}`); 
@@ -242,50 +397,54 @@ document.addEventListener('DOMContentLoaded', () => {
         return sortedPath; 
     } 
     
-    function isOnPath(pos) { return trackPath.some(p => p[0] === pos.row && p[1] === pos.col); }
-    function isAtEnd(pos, path) { if (!path || path.length === 0) return false; const end = path[path.length - 1]; return pos.row === end[0] && pos.col === end[1]; }
+    function isOnPath(pos) { 
+        return trackPath.some(p => p[0] === pos.row && p[1] === pos.col); 
+    }
+    
+    function isAtEnd(pos, path) { 
+        if (!path || path.length === 0) return false; 
+        const end = path[path.length - 1]; 
+        return pos.row === end[0] && pos.col === end[1]; 
+    }
 
     function logGameResult(result) {
-    const trackNameSpan = document.getElementById('trackNameSpan');
-    let trackName = 'Pista Desconocida'; // Valor por defecto
+        const trackNameSpan = document.getElementById('trackNameSpan');
+        let trackName = 'Pista Desconocida';
 
-    if (trackNameSpan) {
-        trackName = trackNameSpan.textContent.trim(); // Obtiene el texto y quita espacios extra
-        console.log("Nombre de pista encontrado en span:", trackName); // Log para verificar
-    } else {
-        console.error("¡ERROR: No se encontró el elemento con ID 'trackNameSpan'!"); // Log si no encuentra el span
-    }
-
-    // Verificación adicional: si el nombre está vacío después de quitar espacios
-    if (!trackName) {
-        trackName = 'Pista Sin Nombre'; // Un fallback por si el span está vacío
-        console.warn("El span del nombre de la pista estaba vacío. Usando valor por defecto.");
-    }
-
-    const payload = {
-        trackName: trackName,
-        result: result
-    };
-
-    console.log("Enviando payload a /log-result:", payload); // Log para ver qué se envía
-
-    fetch('/log-result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-    .then(response => { // Añadimos chequeo de la respuesta del servidor
-        if (!response.ok) {
-            // Si el servidor responde con error (como 400), muestra más detalles
-            console.error("Error del servidor:", response.status, response.statusText);
-            return response.text().then(text => { throw new Error(text || 'Error desconocido del servidor') });
+        if (trackNameSpan) {
+            trackName = trackNameSpan.textContent.trim();
+            console.log("Nombre de pista encontrado en span:", trackName);
+        } else {
+            console.error("¡ERROR: No se encontró el elemento con ID 'trackNameSpan'!");
         }
-        return response.text(); // Si la respuesta es OK (2xx)
-    })
-    .then(data => console.log('Resultado del juego registrado:', data))
-    .catch(error => {
-        console.error('Error al registrar resultado:', error.message || error);
-    });
-    }
 
+        if (!trackName) {
+            trackName = 'Pista Sin Nombre';
+            console.warn("El span del nombre de la pista estaba vacío. Usando valor por defecto.");
+        }
+
+        const payload = {
+            trackName: trackName,
+            result: result
+        };
+
+        console.log("Enviando payload a /log-result:", payload);
+
+        fetch('/log-result', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error("Error del servidor:", response.status, response.statusText);
+                return response.text().then(text => { throw new Error(text || 'Error desconocido del servidor') });
+            }
+            return response.text();
+        })
+        .then(data => console.log('Resultado del juego registrado:', data))
+        .catch(error => {
+            console.error('Error al registrar resultado:', error.message || error);
+        });
+    }
 });
